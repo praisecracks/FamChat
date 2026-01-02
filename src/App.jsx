@@ -72,16 +72,17 @@ function App() {
         />
 
         {/* Settings */}
-        <Route
-          path="/setting"
-          element={
-            <Setting
-              sidebarExpanded={sidebarExpanded}
-              setSidebarExpanded={setSidebarExpanded}
-              currentUser={currentUser}
-            />
-          }
-        />
+       <Route
+  path="/setting"
+  element={
+    <Setting
+      sidebarExpanded={sidebarExpanded}
+      setSidebarExpanded={setSidebarExpanded}
+      currentUser={currentUser}
+    />
+  }
+/>
+
          {/* Settings */}
         <Route
           path="/ai"

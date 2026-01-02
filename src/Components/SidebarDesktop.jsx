@@ -10,6 +10,7 @@ import {
   FaRobot,
   FaCog,
   FaBars,
+  FaSearch, // Added search icon
 } from "react-icons/fa";
 
 const COLORS = [
@@ -46,6 +47,7 @@ const SidebarDesktop = ({
   const location = useLocation();
   const [users, setUsers] = useState([]);
   const [chatsMap, setChatsMap] = useState({});
+  const [searchQuery, setSearchQuery] = useState(""); // Added search state
 
   /* ---------------- ACTIVE VIEW ---------------- */
   const getActiveView = () => {
@@ -103,6 +105,16 @@ const SidebarDesktop = ({
     };
   }, [currentUser]);
 
+  /* ---------------- SEARCH FILTER ---------------- */
+  const filteredUsersList = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    
+    const queryLower = searchQuery.toLowerCase();
+    return users.filter((user) =>
+      user.username?.toLowerCase().includes(queryLower)
+    );
+  }, [users, searchQuery]);
+
   /* ---------------- USERS ---------------- */
   const usersWithSelf = useMemo(() => {
     if (!currentUser) return filteredUsers || users;
@@ -112,17 +124,23 @@ const SidebarDesktop = ({
       ...users.filter((u) => u.id !== currentUser.uid),
     ];
 
-    if (filteredUsers) {
+    // Use search filter if query exists, otherwise use prop-filtered users
+    if (searchQuery.trim()) {
+      merged = [
+        merged[0], 
+        ...filteredUsersList.filter((u) => u.id !== currentUser.uid)
+      ];
+    } else if (filteredUsers) {
       merged = [merged[0], ...filteredUsers.filter((u) => u.id !== currentUser.uid)];
     }
 
     return merged;
-  }, [users, currentUser, filteredUsers]);
+  }, [users, currentUser, filteredUsers, filteredUsersList, searchQuery]);
 
   /* ---------------- NAV CLICK ---------------- */
   const handleNavClick = (view) => {
     if (view === "chats") {
-      toggleSidebar(); // 🔥 SAME TOGGLE AS MENU BAR
+      toggleSidebar();
       return;
     }
 
@@ -138,25 +156,21 @@ const SidebarDesktop = ({
   ];
 
   return (
-    <div className="h-full flex bg-gray-900 text-white">
+    <div className="h-full pt-14 flex bg-gray-900 text-white">
       {/* ---------------- SMALL SIDEBAR ---------------- */}
       <div className="w-16 bg-gray-800 flex flex-col items-center border-r border-gray-700">
-
-        {/* 🔥 MENU TOGGLE BAR (TOP OF FC) */}
-        <button
+        {/* <button
           onClick={toggleSidebar}
           className="w-full h-14 flex items-center justify-center border-b border-gray-700 hover:bg-gray-700/50 transition"
           title="Toggle chats"
         >
           <FaBars />
-        </button>
+        </button> */}
 
-        {/* FC */}
         <div className="text-2xl font-extrabold text-blue-500 tracking-widest mt-4">
           FC
         </div>
 
-        {/* NAV ICONS */}
         <div className="flex flex-col items-center gap-4 mt-6">
           {railItems.map((item) => {
             const isActive = getActiveView() === item.view;
@@ -175,11 +189,10 @@ const SidebarDesktop = ({
           })}
         </div>
 
-        {/* BOTTOM */}
         <div className="mt-auto mb-4 flex flex-col items-center gap-4">
           <button
             className="p-2 hover:bg-gray-700/50 rounded"
-            onClick={() => navigate("/settings")}
+            onClick={() => navigate("/setting")}
           >
             <FaCog />
           </button>
@@ -197,31 +210,53 @@ const SidebarDesktop = ({
       {/* ---------------- BIG SIDEBAR ---------------- */}
       {sidebarExpanded && getActiveView() === "chats" && (
         <div className="w-72 bg-gray-800 border-r border-gray-700 overflow-y-auto">
-          <h2 className="text-xl font-bold px-4 py-3 border-b border-gray-700">
-            Chats
-          </h2>
-
-          {usersWithSelf.map((user) => {
-            const chatInfo = chatsMap[user.id] || {};
-            return (
-              <ChatPreview
-                key={user.id}
-                chatUser={user}
-                lastMessage={chatInfo.lastMessage}
-                lastMessageTime={chatInfo.lastMessageTime}
-                unreadCount={chatInfo.unreadCount}
-                isActive={activeChatId === user.id}
-                isSelf={user.isSelf}
-                onClick={() => {
-                  if (!user.isSelf) {
-                    setActiveChatUser(user);
-                    setActiveChatId(user.id);
-                  }
-                }}
-                onAvatarClick={(u) => setProfileModalUser(u)}
+          <div className="p-4 border-b border-gray-700">
+            <h2 className="text-xl font-bold mb-3">Chats</h2>
+            
+            {/* ---------------- SEARCH BAR ---------------- */}
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               />
-            );
-          })}
+            </div>
+          </div>
+
+          {/* Show "No results" when searching but no matches */}
+          {searchQuery.trim() && filteredUsersList.length === 0 && (
+            <div className="px-4 py-8 text-center text-gray-400">
+              No users found matching "{searchQuery}"
+            </div>
+          )}
+
+          {/* User list */}
+          <div className="py-2">
+            {usersWithSelf.map((user) => {
+              const chatInfo = chatsMap[user.id] || {};
+              return (
+                <ChatPreview
+                  key={user.id}
+                  chatUser={user}
+                  lastMessage={chatInfo.lastMessage}
+                  lastMessageTime={chatInfo.lastMessageTime}
+                  unreadCount={chatInfo.unreadCount}
+                  isActive={activeChatId === user.id}
+                  isSelf={user.isSelf}
+                  onClick={() => {
+                    if (!user.isSelf) {
+                      setActiveChatUser(user);
+                      setActiveChatId(user.id);
+                    }
+                  }}
+                  onAvatarClick={(u) => setProfileModalUser(u)}
+                />
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

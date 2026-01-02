@@ -85,12 +85,10 @@ const SidebarMobile = ({
   const [chatsMap, setChatsMap] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 🔥 PERFECT SEARCH HANDLER
   const handleSearchChange = useCallback((e) => {
     setSearchTerm(e.target.value);
   }, []);
 
-  // 🔥 CLEANUP EFFECT
   useEffect(() => {
     if (!currentUser) return;
 
@@ -146,34 +144,33 @@ const SidebarMobile = ({
   if (mobileView !== "chats") return null;
 
   return (
-    <div className="sm:hidden flex flex-col min-h-screen pt-2 pb-10 text-white bg-gradient-to-b from-gray-900 via-black/50 to-gray-900">
+    <div className="sm:hidden  flex flex-col h-screen
+ bg-gray-900 text-white">
       
-      {/* 🔥 MODERN SEARCH BAR */}
-      <div className="sticky top-0 z-20 p-4 bg-black/80 backdrop-blur-xl border-b border-white/10">
+      {/* Search Bar */}
+      <div className="sticky top-0 z-20 p-3 bg-gray-900 border-b border-gray-800">
         <div className="relative">
           <input
             type="text"
-            placeholder="🔍 Search Family chats..."
+            placeholder="Search Family chats..."
             value={searchTerm}
             onChange={handleSearchChange}
-            className="w-full bg-gray-900/80 border border-gray-700 text-white rounded-2xl px-5 py-3 pl-12 outline-none placeholder-gray-400 backdrop-blur-xl shadow-xl focus:border-blue-500/50 focus:bg-gray-800/90 transition-all duration-200 text-base font-medium"
+            className="w-full bg-gray-800 text-white rounded-xl px-4 py-2 outline-none placeholder-gray-400 focus:ring-1 focus:ring-blue-500"
           />
           {searchTerm && (
-            <motion.button 
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-1 rounded-full backdrop-blur transition-colors"
+            <button
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
               onClick={() => setSearchTerm("")}
-              whileTap={{ scale: 0.9 }}
-              whileHover={{ scale: 1.1 }}
             >
               ✕
-            </motion.button>
+            </button>
           )}
         </div>
       </div>
 
-      {/* 🔥 PERFECT USERS LIST */}
-      <div className="flex-1 overflow-y-auto px-3 space-y-2 pb-20">
-        <AnimatePresence mode="popLayout">
+      {/* Users List */}
+      <div className="flex-1 overflow-y-auto">
+        <AnimatePresence>
           {filteredUsers.length > 0 ? (
             filteredUsers.map((user, index) => {
               const chatInfo = chatsMap[user.id] || {};
@@ -184,21 +181,12 @@ const SidebarMobile = ({
                 <motion.div
                   key={user.id || `self-${user.username}-${index}`}
                   layout
-                  initial={{ opacity: 0, x: -30, scale: 0.95 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: 30, scale: 0.95 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`
-                    group relative p-4 rounded-2xl backdrop-blur-xl border border-transparent
-                    transition-all duration-200 cursor-pointer overflow-hidden
-                    ${isActive 
-                      ? "bg-gradient-to-r from-blue-500/30 to-purple-500/30 border-blue-400/40 shadow-2xl shadow-blue-500/20" 
-                      : "hover:bg-white/10 hover:border-white/20 hover:shadow-xl"
-                    }
-                    ${unreadCount > 0 && !user.isSelf ? "bg-green-500/10 border-green-400/30 shadow-green-500/20" : ""}
-                  `}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  className={`flex items-center p-3 cursor-pointer hover:bg-gray-800/50 transition rounded-xl ${
+                    isActive ? "bg-gray-800 border-l-4 border-blue-500" : ""
+                  }`}
                   onClick={() => {
                     if (!user.isSelf) {
                       setActiveChatUser(user);
@@ -207,131 +195,138 @@ const SidebarMobile = ({
                     }
                   }}
                 >
-                  {/* ✨ Gradient Background Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-transparent to-white/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-
-                  <div className="flex items-center gap-4 relative z-10">
-                    {/* 🎨 Premium Avatar */}
-                    <motion.div
-                      className="relative flex-shrink-0"
-                      whileHover={{ scale: 1.05 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!user.isSelf && setProfileModalUser) setProfileModalUser(user);
-                      }}
-                    >
-                      {user.photoURL ? (
-                        <motion.img
-                          src={user.photoURL}
-                          alt={user.username}
-                          className="w-14 h-14 rounded-2xl object-cover ring-3 ring-white/40 shadow-2xl border-4 border-gray-900/50 hover:ring-white/60 transition-all duration-200"
-                          whileHover={{ rotate: 1 }}
-                        />
-                      ) : (
-                        <div
-                          className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-2xl ring-3 ring-white/40 border-4 border-gray-900/50 relative overflow-hidden hover:scale-110 transition-all duration-200"
-                          style={{ 
-                            background: `linear-gradient(135deg, ${getColorFromUsername(user.username)}, ${getColorFromUsername(user.username + '2')}cc)` 
-                          }}
-                        >
-                          <span>{user.username?.[0]?.toUpperCase() || "U"}</span>
-                          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      )}
-
-                      {/* 🟢 Online Status */}
-                      {user.isOnline && (
-                        <motion.div
-                          className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 border-4 border-gray-900 rounded-full shadow-lg ring-2 ring-green-400/50"
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ repeat: Infinity, duration: 2 }}
-                        />
-                      )}
-                    </motion.div>
-
-                    {/* 📱 Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <motion.h3 
-                          className={`font-bold text-lg truncate pr-4 ${
-                            unreadCount > 0 ? "text-white" : isActive ? "text-blue-200" : "text-white/90 group-hover:text-blue-300"
-                          }`}
-                          whileHover={{ x: 2 }}
-                        >
-                          {user.username}
-                          {user.isSelf && <span className="ml-2 text-xs text-blue-400 font-medium">(You)</span>}
-                        </motion.h3>
-                        
-                        {chatInfo.lastMessageTime && (
-                          <motion.span 
-                            className="text-xs bg-black/60 px-2 py-px rounded-full backdrop-blur font-mono tracking-tight shadow-md"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                          >
-                            {formatTime(chatInfo.lastMessageTime)}
-                          </motion.span>
-                        )}
+                  {/* Avatar */}
+                  <div className="relative flex-shrink-0 w-12 h-12 rounded-xl overflow-hidden">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="" className="w-full h-full object-cover rounded-xl" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center rounded-xl font-bold text-white" style={{ backgroundColor: getColorFromUsername(user.username) }}>
+                        {user.username?.[0]?.toUpperCase() || "U"}
                       </div>
-
-                      <div className="flex items-center justify-between">
-                        <motion.p 
-                          className={`text-sm truncate pr-4 font-medium italic ${
-                            unreadCount > 0 ? "text-white font-bold" : "text-gray-400 group-hover:text-gray-300"
-                          }`}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.1 }}
-                        >
-                          {chatInfo.lastMessage?.length > 35 
-                            ? `${chatInfo.lastMessage.slice(0, 35)}...` 
-                            : chatInfo.lastMessage || "Say hello 👋"
-                          }
-                        </motion.p>
-                      </div>
-                    </div>
-
-                    {/* 🔔 Premium Unread Badge */}
-                    {unreadCount > 0 && !user.isSelf && (
-                      <motion.div
-                        className="relative ml-2"
-                        initial={{ scale: 0, y: -10 }}
-                        animate={{ scale: 1, y: 0 }}
-                      >
-                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-black flex items-center justify-center rounded-2xl shadow-xl ring-2 ring-green-400/50">
-                          {unreadCount > 99 ? "99+" : unreadCount}
-                        </div>
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-yellow-400/60 to-orange-400/60 rounded-2xl blur opacity-75"
-                          animate={{ scale: [1, 1.4, 1] }}
-                          transition={{ repeat: Infinity, duration: 2 }}
-                        />
-                      </motion.div>
+                    )}
+                    {user.isOnline && (
+                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-gray-900 rounded-full" />
                     )}
                   </div>
+
+                  {/* User Info */}
+                  <div className="ml-3 flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <h3 className={`font-medium text-sm truncate ${isActive ? "text-white" : "text-gray-200"}`}>
+                        {user.username}{user.isSelf ? " (You)" : ""}
+                      </h3>
+                      {chatInfo.lastMessageTime && (
+                        <span className="text-xs text-gray-400">{formatTime(chatInfo.lastMessageTime)}</span>
+                      )}
+                    </div>
+                    <p className={`text-xs truncate ${unreadCount > 0 ? "font-semibold text-white" : "text-gray-400"}`}>
+                      {chatInfo.lastMessage || "Say hello 👋"}
+                    </p>
+                  </div>
+
+                  {unreadCount > 0 && !user.isSelf && (
+                    <div className="ml-2 w-6 h-6 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </div>
+                  )}
                 </motion.div>
               );
             })
           ) : (
-            <motion.div 
-              className="flex flex-col items-center justify-center h-96 text-center text-gray-500"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-            >
-              <motion.div 
-                className="text-6xl mb-6"
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ repeat: Infinity, duration: 3 }}
-              >
-                😕
-              </motion.div>
-              <h3 className="text-xl font-bold text-white/70 mb-2">No Family Here Yet!</h3>
-              <p className="text-sm">Your family members will appear here once they join FamChat</p>
-            </motion.div>
+          <div className="flex flex-col items-center justify-center h-96 text-center px-6 relative overflow-hidden">
+  {/* Animated Background */}
+  <div className="absolute inset-0 bg-gradient-to-br from-gray-900/50 via-transparent to-blue-900/20" />
+  
+  {/* Main Family Icon */}
+  <motion.div 
+    className="w-32 h-32 mb-8 p-8 bg-gray-900/30 rounded-3xl backdrop-blur-xl border border-gray-800/50 shadow-2xl flex items-center justify-center relative z-10"
+    initial={{ scale: 0.7, opacity: 0, rotate: -5 }}
+    animate={{ 
+      scale: 1, 
+      opacity: 1, 
+      rotate: 0 
+    }}
+    transition={{ 
+      type: "spring", 
+      duration: 1, 
+      bounce: 0.4 
+    }}
+  >
+    {/* Premium Family SVG */}
+    <svg className="w-24 h-24 text-gray-300 drop-shadow-2xl" fill="none" stroke="currentColor" viewBox="0 0 48 48" strokeWidth={2.5}>
+      <path d="M12 20c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8-8-3.582-8-8z" />
+      <path d="M20 36c-5.523 0-10 1.686-10 3.772V40h20v-0.228C30 37.686 25.523 36 20 36z" />
+      <circle cx="4" cy="20" r="4" />
+      <circle cx="44" cy="20" r="4" />
+      <path d="M36 20c0-4.418-3.582-8-8-8s-8 3.582-8 8 3.582 8 8 8 8-3.582 8-8z" />
+    </svg>
+    
+    {/* Elegant Pulse Ring */}
+    <motion.div 
+      className="absolute w-full h-full border-2 border-blue-400/30 rounded-3xl"
+      animate={{ 
+        scale: [1, 1.15, 1], 
+        opacity: [0.6, 1, 0.6] 
+      }}
+      transition={{ 
+        duration: 2.5, 
+        repeat: Infinity 
+      }}
+    />
+  </motion.div>
+
+  {/* Professional Title */}
+  <motion.h3 
+    className="text-3xl font-bold text-white mb-4 leading-tight tracking-tight drop-shadow-md"
+    initial={{ y: 40, opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    transition={{ delay: 0.4, duration: 0.7, ease: "easeOut" }}
+  >
+    Family Chats
+  </motion.h3>
+
+  {/* Elegant Subtitle */}
+  <motion.p 
+    className="text-xl text-gray-300 font-medium mb-10 max-w-sm leading-relaxed drop-shadow-sm"
+    initial={{ y: 40, opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    transition={{ delay: 0.6, duration: 0.7 }}
+  >
+    Your family conversations will appear here
+  </motion.p>
+
+  {/* Floating Feature Pills */}
+  <motion.div 
+    className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3 opacity-0 lg:opacity-100"
+    initial={{ scale: 0.8 }}
+    animate={{ scale: 1 }}
+    transition={{ delay: 1.2, duration: 0.5 }}
+  >
+    <motion.div 
+      className="bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-700/50 shadow-lg"
+      whileHover={{ scale: 1.05, y: -2 }}
+      transition={{ duration: 0.2 }}
+    >
+      <span className="text-xs font-semibold text-gray-300">👨‍👩‍👧‍👦 Private</span>
+    </motion.div>
+    <motion.div 
+      className="bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-700/50 shadow-lg"
+      whileHover={{ scale: 1.05, y: -2 }}
+      transition={{ duration: 0.2 }}
+    >
+      <span className="text-xs font-semibold text-gray-300">⚡ Real-time</span>
+    </motion.div>
+  </motion.div>
+
+  {/* Subtle Bottom Gradient */}
+  <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-900 to-transparent pointer-events-none" />
+</div>
+
           )}
         </AnimatePresence>
       </div>
 
-      {/* 🔥 MOBILE BOTTOM NAV */}
+      {/* Mobile Bottom Nav */}
       <div className="fixed bottom-0 left-0 right-0 z-50">
         <MobileBottomNav 
           activeScreen={activeScreen} 

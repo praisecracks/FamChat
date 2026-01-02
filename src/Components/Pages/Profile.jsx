@@ -10,6 +10,7 @@ import Loader from "../Loader";
 import { useToaster } from "../Utils/Toaster";
 import { onAuthStateChanged } from "firebase/auth";
 import { motion, AnimatePresence } from "framer-motion";
+import Header from "../Header";
 
 function Profile() {
   const navigate = useNavigate();
@@ -147,7 +148,7 @@ function Profile() {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-slate-50 via-white to-blue-50'}`}>
-      
+      <Header/>
       {/* Header */}
       <div className={`backdrop-blur-sm border-b shadow-sm sticky top-0 z-10 ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white/80 border-gray-200'}`}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">

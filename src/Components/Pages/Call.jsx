@@ -48,7 +48,7 @@ function Call({ sidebarExpanded, setSidebarExpanded, currentUser }) {
           setSidebarExpanded={setSidebarExpanded}
         />
       </div>
-      <Header/>
+<Header currentUser={currentUser} />
 
       {/* Mobile Sidebar */}
       <div className="sm:hidden">

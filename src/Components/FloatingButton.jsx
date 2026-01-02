@@ -1,192 +1,234 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { collection, query, orderBy, startAt, endAt, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import NotFound from "../assets/FamNotFound.png";
+import { motion, AnimatePresence } from "framer-motion";
 
-const NewChatModal = ({ selectChat, onClose }) => {
+const COLORS = [
+  "#3b82f6", "#8b5cf6", "#10b981", "#f59e0b",
+  "#ef4444", "#14b8a6", "#f472b6", "#6366f1",
+  "#06b6d4", "#eab308", "#ec4899", "#84cc16"
+];
+
+// consistent avatar color from username
+const getColorFromUsername = (username) => {
+  if (!username) return COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = username.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return COLORS[Math.abs(hash) % COLORS.length];
+};
+
+const NewChatModal = ({ selectChat, onClose, currentUserId }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const modalRef = useRef();
 
-  const searchUsers = async (term) => {
-    if (!term) {
+  const searchUsers = useCallback(async (term) => {
+    if (!term?.trim() || term.length < 2) {
       setUsers([]);
       return;
     }
 
     setLoading(true);
     try {
+      // Convert term to lowercase for case-insensitive search
+      const lowerTerm = term.toLowerCase();
       const q = query(
         collection(db, "users"),
         orderBy("username"),
-        startAt(term),
-        endAt(term + "\uf8ff")
+        startAt(lowerTerm),
+        endAt(lowerTerm + "\uf8ff")
       );
+
       const snap = await getDocs(q);
-      const results = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const results = snap.docs
+        .map(d => {
+          const data = d.data();
+          return {
+            id: d.id,
+            username: data.username || "Unknown",
+            online: data.online || false,
+            photoURL: data.photoURL || null
+          };
+        })
+        .filter(u => u.id !== currentUserId); // exclude self
+
       setUsers(results);
     } catch (err) {
-      console.error("Error searching users:", err);
+      console.error("Search error:", err);
       setUsers([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUserId]);
 
   useEffect(() => {
-    const debounce = setTimeout(() => {
-      searchUsers(searchTerm.toLowerCase());
-    }, 400);
-    return () => clearTimeout(debounce);
-  }, [searchTerm]);
+    if (!searchTerm.trim()) {
+      setUsers([]);
+      return;
+    }
+    const timeoutId = setTimeout(() => searchUsers(searchTerm.toLowerCase()), 400);
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, searchUsers]);
 
   const highlightText = (text, highlight) => {
-    if (!highlight) return text;
-    const regex = new RegExp(`(${highlight})`, "gi");
-    const parts = text.split(regex);
-    return parts.map((part, i) =>
+    if (!text || !highlight) return text;
+    const safeHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${safeHighlight})`, "gi");
+    return text.split(regex).map((part, i) =>
       regex.test(part) ? (
-        <span key={i} className="bg-yellow-300 text-black font-bold px-0.5 rounded-sm">
+        <mark
+          key={i}
+          className="bg-gradient-to-r from-yellow-400/90 to-orange-400/90 text-black font-bold px-1 rounded-sm shadow-sm backdrop-blur"
+        >
           {part}
-        </span>
-      ) : (
-        part
-      )
+        </mark>
+      ) : part
     );
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full max-w-md animate-modalPop">
-      {/* Header */}
-      <div className="flex justify-between items-center px-4 py-3 border-b border-gray-700">
-        <h2 className="font-bold text-lg">Add Family</h2>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-white text-xl font-bold"
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <motion.div
+          ref={modalRef}
+          className="w-full max-w-md max-h-[85vh] bg-gray-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col relative"
+          initial={{ scale: 0.92, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.92, opacity: 0, y: 20 }}
+          transition={{ type: "spring", stiffness: 420, damping: 32 }}
         >
-          ×
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="p-3 border-b border-gray-700 flex items-center">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search family..."
-          className="flex-1 rounded-full px-4 py-2 bg-gray-900 text-white placeholder-gray-400 outline-none focus:bg-gray-700 transition"
-        />
-        {searchTerm && (
-          <button
-            onClick={() => setSearchTerm("")}
-            className="ml-2 text-gray-400 hover:text-white font-bold"
-          >
-            ×
-          </button>
-        )}
-      </div>
-
-      {/* User List */}
-      <div className="max-h-96 overflow-y-auto p-3 flex flex-col items-center">
-        {loading ? (
-          <div className="text-gray-400">Searching...</div>
-        ) : users.length > 0 ? (
-          users.map((user) => (
-            <div
-              key={user.id}
-              onClick={() => {
-                selectChat(user); // navigate to chat
-                onClose();        // close modal
-              }}
-              className="flex items-center gap-3 p-3 hover:bg-gray-700 cursor-pointer transition animate-fadeInItem w-full rounded"
-            >
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                style={{ backgroundColor: "#4F46E5" }}
-              >
-                {user.username?.[0]?.toUpperCase() || "U"}
-              </div>
-              <span>{highlightText(user.username, searchTerm)}</span>
+          {/* Header */}
+          <div className="p-6 pb-4 border-b border-gray-800/50 flex items-center justify-between relative">
+            <div>
+              <h2 className="text-2xl font-bold text-white">New Chat</h2>
+              <p className="text-sm text-gray-400">Find family members</p>
             </div>
-          ))
-        ) : searchTerm ? (
-          <div className="text-center text-gray-400 mt-4">
-            <img
-              src={NotFound}
-              alt="User not found"
-              className="w-24 h-24 mx-auto mb-2"
+            <motion.button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-2xl transition"
+              whileTap={{ scale: 0.95 }}
+            >
+              ×
+            </motion.button>
+          </div>
+
+          {/* Search Input */}
+          <div className="px-6 py-3 border-b border-gray-800/30 relative">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search family members..."
+              className="w-full h-12 pl-12 pr-4 bg-gray-800 text-white rounded-3xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
-            <div>User not found or cannot be added.</div>
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</div>
+            {searchTerm && (
+              <motion.button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-white rounded-xl transition"
+                whileTap={{ scale: 0.85 }}
+              >
+                ×
+              </motion.button>
+            )}
           </div>
-        ) : (
-          <div className="text-gray-400 text-center mt-4">
-            Start typing to search for your family... <br />Know if your family is on FamChat
+
+          {/* Users List */}
+          <div className="flex-1 overflow-y-auto bg-gray-900 p-2">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center h-full py-16 text-gray-500">
+                <motion.div
+                  className="w-10 h-10 border-3 border-gray-700/50 border-t-blue-500 rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+                <p className="text-sm font-semibold mt-4 tracking-wide">Searching...</p>
+              </div>
+            ) : users.length > 0 ? (
+              users.map((user) => (
+                <motion.div
+                  key={user.id}
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-4 p-4 mb-2 rounded-2xl cursor-pointer hover:bg-gray-800/60 transition"
+                  onClick={() => { selectChat?.(user); onClose(); }}
+                >
+                  {/* Avatar */}
+                  <div
+                    className="w-14 h-14 rounded-xl flex items-center justify-center text-lg font-bold text-white overflow-hidden"
+                    style={{
+                      background: user.photoURL
+                        ? "transparent"
+                        : `linear-gradient(135deg, ${getColorFromUsername(user.username)}, #444)`
+                    }}
+                  >
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt={user.username} className="w-full h-full object-cover" />
+                    ) : (
+                      user.username?.[0]?.toUpperCase() || "U"
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-semibold truncate">
+                      {highlightText(user.username || "Anonymous", searchTerm)}
+                    </p>
+                    <p className="text-xs text-gray-400">{user.online ? "Online" : "Offline"}</p>
+                  </div>
+                </motion.div>
+              ))
+            ) : searchTerm ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+                <img src={NotFound} alt="Not found" className="w-32 h-32 mb-4 opacity-70" />
+                <p>No family members match "{searchTerm}"</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+                <p>Type a name to find family members</p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
-const FloatingButton = ({ selectChat }) => {
+const FloatingButton = ({ selectChat = () => {}, currentUserId }) => {
   const [modalOpen, setModalOpen] = useState(false);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setVisible(true), 300);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <>
-      {/* Floating Button */}
-      <div
-        className={`fixed right-6 bottom-24 z-50 transition-transform duration-700 ease-out ${
-          visible ? "translate-y-0 subtle-bounce opacity-100" : "translate-y-20 opacity-0"
-        }`}
+      <motion.button
+        className="fixed right-6 bottom-24 z-50 w-16 h-16 rounded-3xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 text-white shadow-2xl flex items-center justify-center text-2xl font-black transition hover:from-blue-700 hover:to-indigo-700"
+        onClick={() => setModalOpen(true)}
+        whileHover={{ scale: 1.08, y: -3 }}
+        whileTap={{ scale: 0.96 }}
       >
-        <button
-          onClick={() => setModalOpen(true)}
-          className="w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center text-2xl hover:bg-blue-700 active:scale-95 transition-all duration-200"
-          title="Add family"
-        >
-          +
-        </button>
-      </div>
+        +
+      </motion.button>
 
-      {/* Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40 animate-fadeIn"
-            onClick={() => setModalOpen(false)}
+      <AnimatePresence mode="wait">
+        {modalOpen && (
+          <NewChatModal
+            selectChat={selectChat}
+            onClose={() => setModalOpen(false)}
+            currentUserId={currentUserId}
           />
-          <div className="relative z-10 modal-pop w-11/12 max-w-md">
-            <NewChatModal
-              selectChat={(user) => {
-                selectChat(user); // this navigates to chat window
-                setModalOpen(false);
-              }}
-              onClose={() => setModalOpen(false)}
-            />
-          </div>
-        </div>
-      )}
-
-      <style jsx>{`
-        @keyframes subtleBounce { 0% { transform: translateY(20px); } 50% { transform: translateY(-5px); } 70% { transform: translateY(2px); } 100% { transform: translateY(0); } }
-        .subtle-bounce { animation: subtleBounce 0.6s cubic-bezier(0.25, 1, 0.5, 1); }
-
-        @keyframes modalPop { 0% { opacity: 0; transform: scale(0.9); } 60% { opacity: 1; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
-        .modal-pop { animation: modalPop 0.35s ease-out forwards; }
-
-        @keyframes fadeIn { 0% { opacity: 0; transform: translateY(5px); } 100% { opacity: 1; transform: translateY(0); } }
-        .animate-fadeIn { animation: fadeIn 0.25s ease-out forwards; }
-
-        @keyframes fadeInItem { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
-        .animate-fadeInItem { animation: fadeInItem 0.3s ease-out forwards; }
-      `}</style>
+        )}
+      </AnimatePresence>
     </>
   );
 };

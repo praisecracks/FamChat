@@ -3,6 +3,7 @@ import { FaBars, FaBell, FaSearch, FaTimes, FaCheckCircle } from "react-icons/fa
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
+import logo from "../../public/HouseLogo.jpg"
 
 const Header = ({
   appName = "FamChat",
@@ -99,10 +100,12 @@ const Header = ({
             </span>
 
             <div className="hidden md:flex items-center gap-3">
-              <span className="font-extrabold text-xl text-blue-400" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                {appName}
-              </span>
-            </div>
+  <img src="/HouseLogo.jpg" alt="FamChat Logo" className="w-10 h-10 object-contain" />
+  <span className="font-extrabold text-xl text-blue-400" style={{ fontFamily: "'Poppins', sans-serif" }}>
+    {appName}
+  </span>
+</div>
+
           </div>
 
           {/* CENTER */}
