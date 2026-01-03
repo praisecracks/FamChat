@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaShieldAlt, FaUsers, FaClock, FaMobileAlt } from "react-icons/fa";
 import familyImg from "../../assets/fam.png";
+import logo from "../../../public/HouseLogo.jpg"
 
 const AuthLanding = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const AuthLanding = () => {
         >
           {/* Compact Logo & Hero */}
           <div className="mb-6 lg:mb-8">
-            <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl mb-4 mx-auto lg:mx-0">
+            <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl mb-4 mx-auto lg:mx-0 mt-10">
               <motion.span
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
@@ -28,6 +29,7 @@ const AuthLanding = () => {
               >
                 F
               </motion.span>
+              <img src={logo} alt="" />
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent leading-tight mb-3 lg:mb-4">
               FamChat
