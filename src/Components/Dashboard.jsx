@@ -227,7 +227,7 @@ const Dashboard = () => {
         unreadCount={totalUnread}
       />
 
-      <div className="relative flex-1 overflow-hidden">
+<div className="relative mt-16 lg:mt-0 flex-1 overflow-hidden">
         {/* Desktop sidebar */}
         <div className="hidden sm:block fixed inset-y-0 left-0 z-40">
           <SidebarDesktop

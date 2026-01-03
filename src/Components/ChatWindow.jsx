@@ -365,18 +365,18 @@ const ChatWindow = ({
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-gray-50 to-blue-100 pb-20 relative">
-      {/* Mobile back button */}
-      {isMobile && (
-        <FaArrowLeft
-          className="absolute z-50 h-8 w-8 text-white bg-blue-600 rounded-full p-2 shadow cursor-pointer"
-          style={{ left: backPos.x, top: backPos.y }}
-          onMouseDown={handleDragStart}
-          onMouseMove={handleDrag}
-          onMouseUp={handleDragEnd}
-          onClick={() => window.location.reload()}
-        />
-      )}
+<div className="flex flex-col h-full bg-gradient-to-b from-gray-50 to-blue-100 pb-20 relative">
+  {/* Mobile back button */}
+  {isMobile && (
+    <FaArrowLeft
+      className="absolute z-50 h-8 w-8 text-white bg-blue-600 rounded-full p-2 shadow cursor-pointer lg:hidden"
+      style={{ left: backPos.x, top: backPos.y }}
+      onMouseDown={handleDragStart}
+      onMouseMove={handleDrag}
+      onMouseUp={handleDragEnd}
+      onClick={() => window.location.reload()}
+    />
+  )}
 
       {/* Reply previews */}
       {replyToStatus && (
@@ -468,7 +468,7 @@ const ChatWindow = ({
                     <div
                       key={m.id || msgIndex}
                       ref={(el) => (messageRefs.current[m.id] = el)}
-                      className={`flex ${mine ? "justify-end" : "justify-start"} mb-2 relative`}
+                      className={`flex ${mine ? "justify-end" : "justify-start"} mb-2 relative mt-14`}
                       onTouchStart={(e) => handleTouchStart(e, m.id)}
                       onTouchMove={handleTouchMove}
                       onTouchEnd={() => handleTouchEnd(m)}
@@ -514,7 +514,7 @@ const ChatWindow = ({
                           backgroundColor: deletedMessages[m.id]
                             ? "#f0f0f0"
                             : mine
-                            ? "#dcf8c6"
+                            ? "#cff6b1ff"
                             : "#ffffff",
                           border: mine && !deletedMessages[m.id] ? "none" : "1px solid #e0e0e0",
                         }}
@@ -522,7 +522,7 @@ const ChatWindow = ({
                       >
                         {deletedMessages[m.id] ? (
                           <div className="text-center">
-                            This message has been deleted by {user.displayName || "SuperSIM"}
+                            This message has been deleted by {user.displayName || "FamChat"}
                           </div>
                         ) : (
                           <>

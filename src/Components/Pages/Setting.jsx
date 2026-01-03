@@ -167,7 +167,7 @@ export default function Setting({ sidebarExpanded, setSidebarExpanded }) {
   };
 
   return (
-    <div className="pt-[-20px] flex h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden">
+    <div className="pt-[40px] flex h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden">
       {/* DESKTOP SIDEBAR - FIXED */}
       <div className="hidden sm:block fixed inset-y-0 left-0 z-40">
         <SidebarDesktop
