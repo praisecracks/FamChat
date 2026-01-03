@@ -3,7 +3,7 @@ import SidebarDesktop from "../SidebarDesktop";
 import SidebarMobile from "../SidebarMobile";
 import MobileBottomNav from "../Utils/MobileBottomNav";
 import { FaPhone, FaVideo, FaTools, FaRocket, FaClock } from "react-icons/fa";
-import useCalls from "./CallsFolder//useCalls";
+import useCalls from "./CallsFolder/useCalls";
 import Header from "../Header";
 
 function Call({ sidebarExpanded, setSidebarExpanded, currentUser }) {
