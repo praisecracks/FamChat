@@ -19,6 +19,7 @@ const Header = ({
   const [logoutError, setLogoutError] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
   const [notifications, setNotifications] = useState([]); // 🔥 NOW STATE-DRIVEN
+  
 
   const navigate = useNavigate();
 
