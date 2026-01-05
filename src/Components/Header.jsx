@@ -221,7 +221,7 @@ const Header = ({
               <FaBars size={18} />
             </button>
 
-            <img src="/HouseLogo.jpg" alt="FamChat Logo" className="w-10 h-10 object-cover rounded-full border-2 border-white/20 shadow-md" />
+            <img src="/HouseLogo.jpg" alt="FamChat Logo" className="w-10 h-10 object-cover rounded border-2 border-white/20 shadow-md" />
             <span className="font-extrabold text-xl text-blue-400 md:hidden" style={{ fontFamily: "'Poppins', sans-serif" }}>
               {appName}
             </span>

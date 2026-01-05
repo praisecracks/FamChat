@@ -539,7 +539,7 @@ const PersonalInfoCards = ({
           </div>
           <div className="flex-1 min-w-0">
             <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Photo Album</p>
-                        <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}> Add your best favourite pictures</p>
+                        <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}> Add your favourite pictures</p>
 
             <p className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               {albumPhotos.length}/{MAX_ALBUM_PHOTOS} photos
