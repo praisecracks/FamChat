@@ -36,7 +36,7 @@ const useUsersWithSelfAndSorting = (rawUsers, currentUser, activeChatId, chatsMa
       { 
         ...currentUser, 
         isSelf: true, 
-        username: `${currentUser.username || "You"} (You)`,
+        username: `${currentUser.username || "You"}`,
         lastMessageTime: null,
         lastMessage: "You",
         isOnline: false,

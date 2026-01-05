@@ -2,13 +2,13 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FaBars, FaBell, FaSearch, FaTimes, FaCheckCircle } from "react-icons/fa";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { 
-  doc, 
-  updateDoc, 
-  arrayUnion, 
-  serverTimestamp, 
+import {
+  doc,
+  updateDoc,
+  arrayUnion,
+  serverTimestamp,
   onSnapshot,
-  collection 
+  collection
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import logo from "../../public/HouseLogo.jpg";
@@ -36,11 +36,11 @@ const Header = ({
   // 👁 Track WHO viewed profile (Firestore-safe)
   const trackProfileView = useCallback(async () => {
     if (!currentUser?.uid) return;
-    
+
     try {
       const userRef = doc(db, "users", currentUser.uid);
       const now = new Date().toISOString();
-      
+
       await updateDoc(userRef, {
         profileViewers: arrayUnion({
           viewerId: currentUser.uid,
@@ -126,12 +126,23 @@ const Header = ({
     return () => unsubscribe();
   }, [currentUser?.uid, trackProfileView]);
 
-  // 🔥 INITIALIZE NOTIFICATIONS ON MOUNT
+  // 🔥 UPDATED: Profile Viewer Feature Announcement
   useEffect(() => {
     const initialNotifications = [
-      { id: 1, message: "Welcome to FamChat!", type: "welcome", read: false, time: "2 mins ago" },
-      { id: 2, message: "New family member joined!", type: "member", read: false, time: "5 mins ago" },
-      { id: 3, message: "You have 3 new messages", type: "message", read: true, time: "1 hour ago" },
+      { 
+        id: 1, 
+        message: "Welcome to FamChat! 👋", 
+        type: "welcome", 
+        read: false, 
+        timestamp: new Date(Date.now() - 120000).toISOString() 
+      },
+      { 
+        id: 2, 
+        message: "🚀 New Feature: Profile Viewer is now live! Users can now view each other's profiles. Click the bell icon to see who's viewing your profile!", 
+        type: "feature_update", 
+        read: false, 
+        timestamp: new Date().toISOString() 
+      },
     ];
     setNotifications(initialNotifications);
   }, []);
@@ -160,9 +171,9 @@ const Header = ({
 
   // 🔥 WORKING MARK AS READ
   const markAsRead = (notificationId) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === notificationId 
+    setNotifications(prev =>
+      prev.map(notif =>
+        notif.id === notificationId
           ? { ...notif, read: true }
           : notif
       )
@@ -171,12 +182,31 @@ const Header = ({
 
   // 🔥 WORKING MARK ALL AS READ
   const markAllAsRead = () => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(notif => ({ ...notif, read: true }))
     );
   };
 
   const hasUnread = notifications.some(notif => !notif.read);
+
+  // Format timestamp for display
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "Just now";
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffTime = Math.abs(now - date);
+      const diffMinutes = Math.floor(diffTime / (1000 * 60));
+      
+      if (diffMinutes < 1) return "Just now";
+      if (diffMinutes < 60) return `${diffMinutes}m ago`;
+      const diffHours = Math.floor(diffMinutes / 60);
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return date.toLocaleDateString();
+    } catch {
+      return "Recent";
+    }
+  };
 
   return (
     <>
@@ -191,12 +221,12 @@ const Header = ({
               <FaBars size={18} />
             </button>
 
+            <img src="/HouseLogo.jpg" alt="FamChat Logo" className="w-10 h-10 object-cover rounded-full border-2 border-white/20 shadow-md" />
             <span className="font-extrabold text-xl text-blue-400 md:hidden" style={{ fontFamily: "'Poppins', sans-serif" }}>
               {appName}
             </span>
 
             <div className="hidden md:flex items-center gap-3">
-              <img src="/HouseLogo.jpg" alt="FamChat Logo" className="w-10 h-10 object-contain" />
               <span className="font-extrabold text-xl text-blue-400" style={{ fontFamily: "'Poppins', sans-serif" }}>
                 {appName}
               </span>
@@ -215,7 +245,7 @@ const Header = ({
 
           {/* RIGHT */}
           <div className="flex items-center gap-5">
-            {/* NOTIFICATION BELL - CLICK TO OPEN MODAL */}
+            {/* NOTIFICATION BELL */}
             <div className="relative cursor-pointer p-2 rounded hover:bg-gray-700/40 group" onClick={() => setShowNotifications(true)}>
               <FaBell size={20} className="group-hover:text-blue-400 transition-colors" />
               
@@ -242,7 +272,7 @@ const Header = ({
                   ) : (
                     initials(currentUser?.username || currentUser?.displayName)
                   )}
-                  
+
                   {/* 🟢 Online Status Ring */}
                   {isOnline && (
                     <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-3 border-[#1e293b] rounded-full ring-2 ring-green-400/50 animate-ping" />
@@ -329,7 +359,7 @@ const Header = ({
         </div>
       )}
 
-      {/* NEW: NOTIFICATIONS MODAL - NOW FULLY WORKING */}
+      {/* NEW: NOTIFICATIONS MODAL WITH PROFILE VIEWER ANNOUNCEMENT */}
       {showNotifications && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -337,7 +367,7 @@ const Header = ({
           aria-modal="true"
           onClick={() => setShowNotifications(false)}
         >
-          <div 
+          <div
             className="bg-gray-900 text-white rounded-2xl w-11/12 max-w-md lg:max-w-lg xl:max-w-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900 z-50"
             onClick={(e) => e.stopPropagation()}
           >
@@ -368,7 +398,7 @@ const Header = ({
             {profileViewers.length > 0 && (
               <div className="mb-6 p-4 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-xl border border-emerald-500/30">
                 <h4 className="text-lg font-semibold text-emerald-300 mb-3 flex items-center gap-2">
-                Profile
+                  👁️ Profile Views
                 </h4>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {profileViewers.slice(-5).reverse().map((viewer, index) => (
@@ -388,45 +418,56 @@ const Header = ({
 
             {/* Notifications List */}
             <div className="space-y-3">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer hover:bg-gray-800/50 ${
-                    notification.read 
-                      ? "border-gray-700 bg-gray-800/30" 
-                      : "border-blue-500/50 bg-blue-500/10 shadow-lg"
-                  }`}
-                  onClick={() => !notification.read && markAsRead(notification.id)}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-sm font-bold text-white">
-                        {notification.type === "welcome" ? "🎉" :
-                         notification.type === "member" ? "👨‍👩‍👧‍👦" :
-                         "💬"}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
-                      {!notification.read && (
-                        <span className="inline-block w-2 h-2 bg-green-400 rounded-full mt-1 animate-pulse"></span>
-                      )}
-                      {notification.read && (
-                        <span className="inline-block text-xs text-green-400 font-medium mt-1">Viewed</span>
-                      )}
+              {notifications.map((notification) => {
+                const isUnread = !notification.read;
+                return (
+                  <div
+                    key={notification.id}
+                    className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer hover:bg-gray-800/50 ${
+                      isUnread
+                        ? "border-blue-500/50 bg-blue-500/10 shadow-lg"
+                        : "border-gray-700 bg-gray-800/30"
+                    }`}
+                    onClick={() => isUnread && markAsRead(notification.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 bg-gradient-to-br rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        notification.type === "welcome" ? "from-blue-500 to-indigo-600" :
+                        notification.type === "feature_update" ? "from-purple-500 to-pink-500" :
+                        "from-green-500 to-emerald-600"
+                      }`}>
+                        <span className="text-sm font-bold text-white">
+                          {notification.type === "welcome" ? "🎉" :
+                           notification.type === "feature_update" ? "✨" :
+                           "💬"}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium ${
+                          isUnread ? "text-white" : "text-gray-200"
+                        }`}>
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {formatTime(notification.timestamp || notification.time)}
+                        </p>
+                        {isUnread && (
+                          <span className="inline-block w-2 h-2 bg-green-400 rounded-full mt-1 animate-pulse"></span>
+                        )}
+                        {notification.read && (
+                          <span className="inline-block text-xs text-green-400 font-medium mt-1">Viewed</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Footer */}
             {hasUnread && (
               <div className="mt-6 pt-4 border-t border-gray-700 text-center">
-                <button 
+                <button
                   onClick={markAllAsRead}
                   className="text-blue-400 hover:text-blue-300 text-sm font-bold bg-blue-500/20 px-4 py-2 rounded-xl border border-blue-500/30 hover:bg-blue-500/30 transition-all duration-200"
                 >
