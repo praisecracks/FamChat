@@ -323,7 +323,7 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <>
-                  <div className="flex justify-center w-full mt-3 mb-2">
+                  <div className="lg:mt-20 flex justify-center w-full mt-3 mb-2">
                     <div className="flex items-center gap-4 px-6 py-3 rounded-2xl backdrop-blur-lg bg-white/5 border border-white/10 shadow max-w-[720px] w-full text-white">
                       <div className="flex items-center justify-center w-12 h-12 rounded-full text-lg font-bold" style={{ backgroundColor: getColorFromUsername(currentChat.username) }}>
                         {!currentChat.photoURL ? <span className="text-white">{currentChat.username?.[0]?.toUpperCase() || "U"}</span> : <img src={currentChat.photoURL} className="w-12 h-12 rounded-full object-cover" alt={currentChat.username} />}
@@ -335,7 +335,7 @@ const Dashboard = () => {
                       <div className={`ml-auto w-3 h-3 rounded-full ${currentChat.online ? "bg-green-400" : "bg-gray-500"}`} />
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto ">
                     <ChatWindow messages={messages} user={authUser} chatUser={currentChat} replyTo={replyTo} setReplyTo={setReplyTo} />
                   </div>
                   <MessageInput currentChat={currentChat} user={authUser} replyTo={replyTo} setReplyTo={setReplyTo} />
