@@ -246,7 +246,7 @@ const Notifications = ({
 
       {/* Description */}
       <p className="text-gray-300 text-sm leading-relaxed mb-4 max-w-md">
-        You can now open and explore other users’ profiles to learn more about them and connect better on FamChat.
+        You can now enjoy the chat experience profile viewer features, Note all data and chats are securely store and encrypted.
       </p>
 
       {/* CTA */}

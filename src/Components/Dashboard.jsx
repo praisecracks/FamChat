@@ -24,10 +24,17 @@ import FloatingButton from "./FloatingButton";
 import MobileBottomNav from "./Utils/MobileBottomNav";
 import { useToaster } from "./Utils/Toaster";
 import ProfileModal from "./Modals/ProfileModal";
+import MobileChatScreen from "./MobileChatScreen"; // ✅ NEW
 
 const COLORS = [
-  "#3b82f6", "#8b5cf6", "#10b981", "#f59e0b",
-  "#ef4444", "#14b8a6", "#f472b6", "#6366f1",
+  "#3b82f6",
+  "#8b5cf6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#14b8a6",
+  "#f472b6",
+  "#6366f1",
 ];
 
 const getColorFromUsername = (username) => {
@@ -45,7 +52,7 @@ const Dashboard = () => {
   const [messages, setMessages] = useState([]);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [activeScreen, setActiveScreen] = useState("chats");
-  const [mobileView, setMobileView] = useState("chats");
+  const [mobileView, setMobileView] = useState("chats"); // "chats" | "chat"
   const [unreadMap, setUnreadMap] = useState({});
   const [authUser, setAuthUser] = useState(null);
   const [currentUserDoc, setCurrentUserDoc] = useState(null);
@@ -53,7 +60,7 @@ const Dashboard = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
 
-  // ✅ Profile modal state
+  // Profile modal state
   const [profileModalUser, setProfileModalUser] = useState(null);
 
   const chatContainerRef = useRef(null);
@@ -61,7 +68,8 @@ const Dashboard = () => {
 
   // Detect mobile view
   useEffect(() => {
-    const update = () => setIsMobile(window.matchMedia("(max-width: 639px)").matches);
+    const update = () =>
+      setIsMobile(window.matchMedia("(max-width: 639px)").matches);
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -79,7 +87,10 @@ const Dashboard = () => {
       const userDocRef = doc(db, "users", user.uid);
       const unsubUserDoc = onSnapshot(
         userDocRef,
-        (snap) => setCurrentUserDoc(snap.exists() ? { uid: snap.id, ...snap.data() } : null),
+        (snap) =>
+          setCurrentUserDoc(
+            snap.exists() ? { uid: snap.id, ...snap.data() } : null
+          ),
         (err) => console.error("User snapshot error:", err)
       );
 
@@ -96,10 +107,19 @@ const Dashboard = () => {
     const userDocRef = doc(db, "users", authUser.uid);
 
     const handleBeforeUnload = async () => {
-      try { await updateDoc(userDocRef, { online: false, lastSeen: new Date() }); } catch {}
+      try {
+        await updateDoc(userDocRef, {
+          online: false,
+          lastSeen: new Date(),
+        });
+      } catch {}
     };
     const handleVisibilityChange = async () => {
-      try { await updateDoc(userDocRef, { online: document.visibilityState === "visible" }); } catch {}
+      try {
+        await updateDoc(userDocRef, {
+          online: document.visibilityState === "visible",
+        });
+      } catch {}
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -111,29 +131,35 @@ const Dashboard = () => {
     };
   }, [authUser]);
 
-  const markMessagesAsRead = useCallback(async (chatId) => {
-    if (!chatId || !authUser) return;
-    clearTimeout(markReadTimeout.current);
-    markReadTimeout.current = setTimeout(async () => {
-      try {
-        const msgsRef = collection(db, "chats", chatId, "messages");
-        const q = query(msgsRef, where("read", "==", false));
-        const snap = await getDocs(q);
-        const promises = snap.docs
-          .map((d) => {
-            const data = d.data();
-            if (data.senderId && data.senderId !== authUser.uid) {
-              return updateDoc(doc(db, "chats", chatId, "messages", d.id), { read: true });
-            }
-            return null;
-          })
-          .filter(Boolean);
-        await Promise.all(promises);
-      } catch (err) {
-        console.error("markMessagesAsRead error:", err);
-      }
-    }, 220);
-  }, [authUser]);
+  const markMessagesAsRead = useCallback(
+    async (chatId) => {
+      if (!chatId || !authUser) return;
+      clearTimeout(markReadTimeout.current);
+      markReadTimeout.current = setTimeout(async () => {
+        try {
+          const msgsRef = collection(db, "chats", chatId, "messages");
+          const q = query(msgsRef, where("read", "==", false));
+          const snap = await getDocs(q);
+          const promises = snap.docs
+            .map((d) => {
+              const data = d.data();
+              if (data.senderId && data.senderId !== authUser.uid) {
+                return updateDoc(
+                  doc(db, "chats", chatId, "messages", d.id),
+                  { read: true }
+                );
+              }
+              return null;
+            })
+            .filter(Boolean);
+          await Promise.all(promises);
+        } catch (err) {
+          console.error("markMessagesAsRead error:", err);
+        }
+      }, 220);
+    },
+    [authUser]
+  );
 
   // Listen to messages
   useEffect(() => {
@@ -152,12 +178,20 @@ const Dashboard = () => {
           try {
             if (data.createdAt?.toDate) {
               const dt = data.createdAt.toDate();
-              time = dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+              time = dt.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
             } else if (data.createdAt?.seconds) {
               const dt = new Date(data.createdAt.seconds * 1000);
-              time = dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+              time = dt.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
             }
-          } catch (e) { time = ""; }
+          } catch (e) {
+            time = "";
+          }
           return { id: d.id, ...data, time };
         });
         setMessages(loaded);
@@ -165,7 +199,8 @@ const Dashboard = () => {
         // Scroll to bottom
         setTimeout(() => {
           if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+            chatContainerRef.current.scrollTop =
+              chatContainerRef.current.scrollHeight;
           }
         }, 50);
 
@@ -187,12 +222,17 @@ const Dashboard = () => {
     }
     try {
       const chatsRef = collection(db, "chats");
-      const q = query(chatsRef, where("participants", "array-contains", authUser.uid));
+      const q = query(
+        chatsRef,
+        where("participants", "array-contains", authUser.uid)
+      );
       const snap = await getDocs(q);
 
       const existingChat = snap.docs.find((docSnap) => {
         const parts = docSnap.data().participants || [];
-        return parts.includes(selectedUser.uid) && parts.includes(authUser.uid);
+        return (
+          parts.includes(selectedUser.uid) && parts.includes(authUser.uid)
+        );
       });
 
       if (existingChat) {
@@ -214,7 +254,10 @@ const Dashboard = () => {
     }
   };
 
-  const totalUnread = Object.values(unreadMap).reduce((a, b) => a + (b || 0), 0);
+  const totalUnread = Object.values(unreadMap).reduce(
+    (a, b) => a + (b || 0),
+    0
+  );
 
   return (
     <div className="flex flex-col h-screen bg-gray-800">
@@ -227,7 +270,7 @@ const Dashboard = () => {
         unreadCount={totalUnread}
       />
 
-<div className="relative mt-16 lg:mt-0 flex-1 overflow-hidden">
+      <div className="relative mt-16 lg:mt-0 flex-1 overflow-hidden">
         {/* Desktop sidebar */}
         <div className="hidden sm:block fixed inset-y-0 left-0 z-40">
           <SidebarDesktop
@@ -235,7 +278,9 @@ const Dashboard = () => {
             setActiveScreen={setActiveScreen}
             activeChatId={currentChat?.chatId}
             setActiveChatUser={openChatWith}
-            setActiveChatId={(id) => setCurrentChat((c) => ({ ...(c || {}), chatId: id }))}
+            setActiveChatId={(id) =>
+              setCurrentChat((c) => ({ ...(c || {}), chatId: id }))
+            }
             sidebarExpanded={sidebarExpanded}
             setSidebarExpanded={setSidebarExpanded}
             currentUser={currentUserDoc}
@@ -252,7 +297,9 @@ const Dashboard = () => {
             mobileView={mobileView}
             setMobileView={setMobileView}
             setActiveChatUser={openChatWith}
-            setActiveChatId={(id) => setCurrentChat((c) => ({ ...(c || {}), chatId: id }))}
+            setActiveChatId={(id) =>
+              setCurrentChat((c) => ({ ...(c || {}), chatId: id }))
+            }
             unreadMap={unreadMap}
             currentUser={currentUserDoc}
             setProfileModalUser={setProfileModalUser}
@@ -260,7 +307,7 @@ const Dashboard = () => {
         </div>
 
         {/* Main content */}
-        <div className={`h-full flex flex-col relative sm:ml-[92px]`}>
+        <div className="h-full flex flex-col relative sm:ml-[92px]">
           {profileModalUser && (
             <ProfileModal
               user={profileModalUser}
@@ -277,19 +324,28 @@ const Dashboard = () => {
           {/* MOBILE VIEW */}
           {isMobile ? (
             <div className="flex flex-col h-screen relative">
-              <div ref={chatContainerRef} className="flex-1 overflow-y-auto pb-28 bg-[#0b1220]">
-                {currentChat ? (
-                  <ChatWindow messages={messages} user={authUser} chatUser={currentChat} replyTo={replyTo} setReplyTo={setReplyTo} />
-                ) : (
-                  <div className="flex-1 flex items-center justify-center text-gray-400">
-                    Select a chat to start messaging
-                  </div>
-                )}
-              </div>
-
-              {currentChat && (
-                <div className="absolute bottom-0 left-0 w-full z-10">
-                  <MessageInput currentChat={currentChat} user={authUser} replyTo={replyTo} setReplyTo={setReplyTo} />
+              {mobileView === "chat" ? (
+                <MobileChatScreen
+                  currentChat={currentChat}
+                  messages={messages}
+                  authUser={authUser}
+                  replyTo={replyTo}
+                  setReplyTo={setReplyTo}
+                  onBack={() => {
+                    setMobileView("chats");
+                    setCurrentChat(null);
+                  }}
+                />
+              ) : (
+                <div
+                  ref={chatContainerRef}
+                  className="flex-1 overflow-y-auto pb-28 bg-[#0b1220]"
+                >
+                  {!currentChat && (
+                    <div className="flex-1 flex items-center justify-center text-gray-400">
+                      Select a chat to start messaging
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -310,41 +366,91 @@ const Dashboard = () => {
                   <div
                     className="absolute inset-0 opacity-20"
                     style={{
-                      backgroundImage: `url('https://i.ibb.co/1dR1qYw/whatsapp-bg-pattern.png')`,
+                      backgroundImage:
+                        "url('https://i.ibb.co/1dR1qYw/whatsapp-bg-pattern.png')",
                       backgroundRepeat: "repeat",
                       backgroundSize: "60px 60px",
                     }}
                   />
                   <div className="relative animate-fadeIn">
-                    <div className="mb-3 text-2xl sm:text-3xl font-bold text-white">Welcome to FamChat 👋</div>
-                    <div className="mb-2 text-gray-300 text-base sm:text-lg">Select a chat from the sidebar</div>
-                    <div className="text-sm text-gray-400">Or tap <span className="font-bold text-green-400">+</span> to start a new chat</div>
+                    <div className="mb-3 text-2xl sm:text-3xl font-bold text-white">
+                      Welcome to FamChat 👋
+                    </div>
+                    <div className="mb-2 text-gray-300 text-base sm:text-lg">
+                      Select a chat from the sidebar
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      Or tap{" "}
+                      <span className="font-bold text-green-400">+</span> to
+                      start a new chat
+                    </div>
                   </div>
                 </div>
               ) : (
                 <>
                   <div className="lg:mt-20 flex justify-center w-full mt-3 mb-2">
                     <div className="flex items-center gap-4 px-6 py-3 rounded-2xl backdrop-blur-lg bg-white/5 border border-white/10 shadow max-w-[720px] w-full text-white">
-                      <div className="flex items-center justify-center w-12 h-12 rounded-full text-lg font-bold" style={{ backgroundColor: getColorFromUsername(currentChat.username) }}>
-                        {!currentChat.photoURL ? <span className="text-white">{currentChat.username?.[0]?.toUpperCase() || "U"}</span> : <img src={currentChat.photoURL} className="w-12 h-12 rounded-full object-cover" alt={currentChat.username} />}
+                      <div
+                        className="flex items-center justify-center w-12 h-12 rounded-full text-lg font-bold"
+                        style={{
+                          backgroundColor: getColorFromUsername(
+                            currentChat.username
+                          ),
+                        }}
+                      >
+                        {!currentChat.photoURL ? (
+                          <span className="text-white">
+                            {currentChat.username?.[0]?.toUpperCase() || "U"}
+                          </span>
+                        ) : (
+                          <img
+                            src={currentChat.photoURL}
+                            className="w-12 h-12 rounded-full object-cover"
+                            alt={currentChat.username}
+                          />
+                        )}
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-semibold text-lg">{currentChat.username}</span>
-                        <span className="text-sm text-gray-300">{currentChat.online ? "Online" : "Offline"}</span>
+                        <span className="font-semibold text-lg">
+                          {currentChat.username}
+                        </span>
+                        <span className="text-sm text-gray-300">
+                          {currentChat.online ? "Online" : "Offline"}
+                        </span>
                       </div>
-                      <div className={`ml-auto w-3 h-3 rounded-full ${currentChat.online ? "bg-green-400" : "bg-gray-500"}`} />
+                      <div
+                        className={`ml-auto w-3 h-3 rounded-full ${
+                          currentChat.online
+                            ? "bg-green-400"
+                            : "bg-gray-500"
+                        }`}
+                      />
                     </div>
                   </div>
                   <div className="flex-1 overflow-y-auto ">
-                    <ChatWindow messages={messages} user={authUser} chatUser={currentChat} replyTo={replyTo} setReplyTo={setReplyTo} />
+                    <ChatWindow
+                      messages={messages}
+                      user={authUser}
+                      chatUser={currentChat}
+                      chatId={currentChat.chatId}
+                      replyTo={replyTo}
+                      setReplyTo={setReplyTo}
+                    />
                   </div>
-                  <MessageInput currentChat={currentChat} user={authUser} replyTo={replyTo} setReplyTo={setReplyTo} />
+                  <MessageInput
+                    currentChat={currentChat}
+                    user={authUser}
+                    replyTo={replyTo}
+                    setReplyTo={setReplyTo}
+                  />
                 </>
               )}
             </>
           )}
 
-          <FloatingButton onClick={() => showToast({ message: 'New chat coming soon' })} />
+          <FloatingButton
+            onClick={() => showToast({ message: "New chat coming soon" })}
+          />
         </div>
       </div>
     </div>
