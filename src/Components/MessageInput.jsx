@@ -19,18 +19,34 @@ import VoiceNoteInput from "./ChatFolder/VoiceNoteInput";
 
 const MessageInput = ({ currentChat, user, replyTo, setReplyTo, isMobile }) => {
   const { show: showToast } = useToaster();
+
   const [text, setText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const sending = useRef(false);
+  const [isSending, setIsSending] = useState(false);
+
+  const sendingRef = useRef(false);
+  const inputRef = useRef(null);
+
+  // ✅ Cancel guard
+  const voiceCancelledRef = useRef(false);
 
   const CLOUD_NAME = "dcc1upymc";
-  const UPLOAD_PRESET = "chat_images"; // For images/videos
-  const VOICE_UPLOAD_PRESET = "chat_voice"; // Create another unsigned preset for audio
+  const UPLOAD_PRESET = "chat_images";
+  const VOICE_UPLOAD_PRESET = "chat_voice";
+
+  // ---------------- CLEAR INPUT ----------------
+  const clearInput = () => {
+    setText("");
+    if (inputRef.current) inputRef.current.value = "";
+    setReplyTo?.(null);
+  };
 
   // ---------------- SEND MESSAGE ----------------
   const sendMessage = async (msg) => {
-    if (!currentChat || !user || sending.current) return;
-    sending.current = true;
+    if (!currentChat || !user || sendingRef.current || isSending) return;
+
+    sendingRef.current = true;
+    setIsSending(true);
 
     try {
       const messagesRef = collection(
@@ -49,7 +65,11 @@ const MessageInput = ({ currentChat, user, replyTo, setReplyTo, isMobile }) => {
         createdAt: Date.now(),
         read: false,
         replyTo: replyTo
-          ? { id: replyTo.id, text: replyTo.text, senderId: replyTo.senderId }
+          ? {
+              id: replyTo.id,
+              text: replyTo.text,
+              senderId: replyTo.senderId,
+            }
           : null,
       });
 
@@ -77,29 +97,32 @@ const MessageInput = ({ currentChat, user, replyTo, setReplyTo, isMobile }) => {
         lastMessageCreatedAt: Date.now(),
       });
 
-      setText("");
-      setReplyTo(null);
+      clearInput();
     } catch (err) {
       console.error("sendMessage error:", err);
       showToast({ message: "Failed to send message", type: "error" });
     } finally {
-      sending.current = false;
-      setIsRecording(false);
+      sendingRef.current = false;
+      setIsSending(false);
     }
   };
 
   // ---------------- SEND TEXT ----------------
-  const handleSendText = (e) => {
+  const handleSendText = async (e) => {
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed) return;
-    sendMessage({ text: trimmed });
+
+    clearInput();
+    await sendMessage({ text: trimmed });
   };
 
   // ---------------- MEDIA UPLOAD ----------------
   const handleMediaUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    clearInput();
 
     const formData = new FormData();
     formData.append("file", file);
@@ -112,15 +135,24 @@ const MessageInput = ({ currentChat, user, replyTo, setReplyTo, isMobile }) => {
       );
 
       const type = file.type.startsWith("video") ? "video" : "image";
-      sendMessage({ mediaUrl: res.data.secure_url, mediaType: type });
+      await sendMessage({ mediaUrl: res.data.secure_url, mediaType: type });
     } catch (err) {
       console.error("Cloudinary upload error:", err);
       showToast({ message: "Failed to upload media", type: "error" });
     }
   };
 
-  // ---------------- VOICE NOTE UPLOAD ----------------
+  // ---------------- VOICE NOTE HANDLER (FIXED) ----------------
   const handleVoiceRecorded = async (audioBlob) => {
+    // ❌ Cancelled → do nothing
+    if (voiceCancelledRef.current) {
+      voiceCancelledRef.current = false;
+      return;
+    }
+
+    // ✅ IMMEDIATELY EXIT VOICE MODE (THIS IS THE FIX)
+    setIsRecording(false);
+
     const formData = new FormData();
     formData.append("file", audioBlob);
     formData.append("upload_preset", VOICE_UPLOAD_PRESET);
@@ -131,11 +163,15 @@ const MessageInput = ({ currentChat, user, replyTo, setReplyTo, isMobile }) => {
         formData
       );
 
-      sendMessage({ mediaUrl: res.data.secure_url, mediaType: "audio" });
+      await sendMessage({
+        mediaUrl: res.data.secure_url,
+        mediaType: "audio",
+      });
     } catch (err) {
       console.error("Voice note upload error:", err);
       showToast({ message: "Failed to upload voice note", type: "error" });
-      setIsRecording(false);
+    } finally {
+      voiceCancelledRef.current = false;
     }
   };
 
@@ -150,7 +186,10 @@ const MessageInput = ({ currentChat, user, replyTo, setReplyTo, isMobile }) => {
       {replyTo && (
         <div className="flex items-center bg-gray-800 text-white px-3 py-2 border-l-4 border-blue-500">
           <span className="text-sm truncate flex-1">{replyTo.text}</span>
-          <button onClick={() => setReplyTo(null)} className="ml-2">
+          <button
+            onClick={() => setReplyTo(null)}
+            className="ml-2 p-1 hover:bg-gray-700 rounded-full"
+          >
             <FaTimes />
           </button>
         </div>
@@ -160,7 +199,7 @@ const MessageInput = ({ currentChat, user, replyTo, setReplyTo, isMobile }) => {
         {/* Media */}
         <label
           htmlFor="media-upload"
-          className="p-3 rounded-full bg-gray-700 text-white cursor-pointer hover:bg-gray-600 transition"
+          className="p-3 rounded-full bg-gray-700 text-white cursor-pointer hover:bg-gray-600"
         >
           <FaPhotoVideo />
         </label>
@@ -170,21 +209,27 @@ const MessageInput = ({ currentChat, user, replyTo, setReplyTo, isMobile }) => {
           accept="image/*,video/*"
           className="hidden"
           onChange={handleMediaUpload}
+          disabled={isSending}
         />
 
-        {/* Input area */}
+        {/* Input */}
         <div className="flex-1">
           {isRecording ? (
             <VoiceNoteInput
-              onCancel={() => setIsRecording(false)}
+              onCancel={() => {
+                voiceCancelledRef.current = true;
+                setIsRecording(false);
+              }}
               onRecorded={handleVoiceRecorded}
             />
           ) : (
             <input
-              className="w-full px-4 py-2 rounded-full bg-[#0f1724] text-white outline-none"
-              placeholder="Type a message..."
+              ref={inputRef}
               value={text}
               onChange={(e) => setText(e.target.value)}
+              disabled={isSending}
+              className="w-full px-4 py-3 rounded-full bg-[#0f1724] text-white outline-none"
+              placeholder="Type a message..."
             />
           )}
         </div>
@@ -193,15 +238,20 @@ const MessageInput = ({ currentChat, user, replyTo, setReplyTo, isMobile }) => {
         {hasText ? (
           <button
             type="submit"
-            className="p-3 rounded-full bg-blue-600 text-white shadow active:scale-90 transition"
+            disabled={isSending}
+            className="p-3 rounded-full bg-blue-600 text-white active:scale-95"
           >
             <FaPaperPlane />
           </button>
         ) : (
           <button
             type="button"
-            onClick={() => setIsRecording(true)}
-            className="p-3 rounded-full bg-gray-700 text-white hover:bg-green-600 transition shadow"
+            onClick={() => {
+              voiceCancelledRef.current = false;
+              setIsRecording(true);
+            }}
+            disabled={isSending}
+            className="p-3 rounded-full bg-gray-700 text-white hover:bg-blue-600"
           >
             <FaMicrophone />
           </button>

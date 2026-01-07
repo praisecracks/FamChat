@@ -186,7 +186,7 @@ const SidebarDesktop = ({
   ];
 
   return (
-    <div className="h-full pt-14 flex bg-gray-900 text-white">
+    <div className="h-full pt-14 z-[100] flex bg-gray-900 text-white">
       {/* Small Sidebar */}
       <div className="w-16 bg-gray-800 flex flex-col items-center border-r border-gray-700">
         <div className="text-2xl font-extrabold text-blue-500 tracking-widest mt-4">
